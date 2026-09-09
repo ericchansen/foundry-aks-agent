@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {"value": "eastus2"},
+    "accountName": {"value": "REPLACE_WITH_DEDICATED_FOUNDRY_ACCOUNT"},
+    "projectName": {"value": "REPLACE_WITH_DEDICATED_PROJECT"},
+    "registryName": {"value": "REPLACE_WITH_DEDICATED_ACR"},
+    "workspaceName": {"value": "REPLACE_WITH_DEDICATED_WORKSPACE"},
+    "applicationInsightsName": {"value": "REPLACE_WITH_DEDICATED_APP_INSIGHTS"},
+    "appInsightsConnectionName": {"value": "appinsights"},
+    "workloadIdentityName": {"value": "REPLACE_WITH_WORKLOAD_UAI"},
+    "controlPlaneIdentityName": {"value": "REPLACE_WITH_CONTROL_PLANE_UAI"},
+    "kubeletIdentityName": {"value": "REPLACE_WITH_KUBELET_UAI"},
+    "operatorObjectId": {"value": "REPLACE_WITH_ENTRA_OBJECT_ID"},
+    "modelDeploymentName": {"value": "gpt-4.1-mini"},
+    "modelName": {"value": "gpt-4.1-mini"},
+    "modelVersion": {"value": "2025-04-14"},
+    "modelSku": {"value": "GlobalStandard"},
+    "modelCapacity": {"value": 1}
+  }
+}
