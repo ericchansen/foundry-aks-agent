@@ -1,8 +1,45 @@
 # Deploy and prove Path A
 
-**Status: implemented, not deployed.** No Azure resources have been provisioned
-and no real AKS model request or Foundry trace has been demonstrated. Local and
-hosted validation are not evidence of cloud deployment.
+**Status: supporting Azure resources provisioned; AKS deployment incomplete.**
+Provisioning was authorized. No real AKS model request, external-agent
+registration, or live Foundry trace has been demonstrated. Local and hosted
+validation are not evidence of cloud deployment.
+
+## Deployment record
+
+Observed on September 9, 2026, through Azure CLI, ARM, and the Foundry SDK:
+
+| Component | Observed result |
+| --- | --- |
+| Dedicated registry and serving image | Remote build succeeded; image pinned by digest |
+| Foundry account, project, and model deployment | Created; `gpt-4.1-mini` deployment reports `Succeeded` |
+| Workload identity | Created with model-access role; federation must use the next successful cluster's issuer |
+| Application Insights and Log Analytics | Created; project connection read back through ARM and the Foundry SDK |
+| AKS | Three attempts across East US 2 and Central US did not produce a usable control plane |
+| Authenticated AKS model request | Not performed |
+| External-agent registration and attributed live traces | Not demonstrated |
+
+All provisioned resources are demo-exclusive, including the separate
+[AKS-managed node resource groups][node-rg]. The image was built from
+[commit `0940bb0`](https://github.com/ericchansen/foundry-aks-agent/commit/0940bb0ef1079eca0e0bec4f36942737f1042760)
+and has digest
+`sha256:0c4828811808d42c7c90f0cf091e6cd38d8b893e49e70344501e28015666a802`.
+This establishes image provenance, not execution on AKS.
+
+The AKS attempts remained `InProgress` at 1% without a kubelet identity or node
+resources, and credential retrieval returned `ControlPlaneNotFound`. A
+preserved-configuration reconciliation and an alternate region did not resolve
+the observed stall. The bounded waits expired; ARM did not report a terminal
+`Failed` result. The create/update diagnostic detector found no known client
+error. These observations do not establish a root cause or prove a regional
+outage; use the [AKS operation diagnostics][operation-status] for investigation.
+
+The empty cluster attempts and their managed node groups were removed rather
+than left provisioning unattended. The dedicated non-AKS resources remain and
+are not a completed teardown. Resume with the existing image/model/project,
+provision a usable cluster, replace the stale federation issuer, and perform
+the request and attribution steps below. Do not substitute registration alone
+or a model call outside AKS for the missing evidence.
 
 ## Approval boundary
 
@@ -14,8 +51,9 @@ An unanswered approval request is not approval.
 
 Either approve dedicated resources or explicitly approve reuse of named existing
 ones. Do not change unrelated projects, registries, identity grants, or telemetry
-connections. No provisioning script is included because the target is undecided.
-After approval, use the [AKS Workload Identity guide][identity] for a Linux/amd64
+connections. Infrastructure creation is an operator step; the checked-in
+manifests describe the application deployment. After approval, use the
+[AKS Workload Identity guide][identity] for a Linux/amd64
 cluster with OIDC and Workload Identity enabled, an ACR, and a dedicated
 user-assigned managed identity.
 
@@ -46,9 +84,16 @@ $Rendered = '<private-directory-outside-the-repository>'
 
 az login --tenant $Tenant
 az account show --subscription $Subscription --query '{id:id,tenantId:tenantId,name:name}'
-az aks show --subscription $Subscription -g $AksResourceGroup -n $AksName --query '{id:id,nodeResourceGroup:nodeResourceGroup,oidc:oidcIssuerProfile,identity:securityProfile.workloadIdentity}'
+$Cluster = az aks show --subscription $Subscription -g $AksResourceGroup -n $AksName -o json | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or $Cluster.provisioningState -ne 'Succeeded' -or -not $Cluster.identityProfile.kubeletidentity.objectId) {
+    throw 'AKS is not ready: require Succeeded and a kubelet identity before deployment'
+}
 az aks get-credentials --subscription $Subscription -g $AksResourceGroup -n $AksName --file $Kubeconfig --context $Context
 ```
+
+Do not treat a successful CLI wait exit code or an accepted ARM write as proof
+of readiness. After credential retrieval, the platform operator must also
+confirm that the Kubernetes API responds and the intended nodes are Ready.
 
 Use non-admin credentials and restrict the kubeconfig file to the operator.
 Every kubectl command below explicitly identifies its context and namespace.
@@ -286,3 +331,4 @@ not stop AKS execution or delete ingested spans.
 [downward]: https://kubernetes.io/docs/concepts/workloads/pods/downward-api/
 [forward]: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_port-forward/
 [data-model]: https://learn.microsoft.com/en-us/azure/azure-monitor/app/data-model-complete
+[operation-status]: https://learn.microsoft.com/en-us/rest/api/aks/operation-status-result/get
