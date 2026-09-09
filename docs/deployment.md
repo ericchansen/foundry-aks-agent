@@ -51,8 +51,11 @@ An unanswered approval request is not approval.
 
 Either approve dedicated resources or explicitly approve reuse of named existing
 ones. Do not change unrelated projects, registries, identity grants, or telemetry
-connections. Infrastructure creation is an operator step; the checked-in
-manifests describe the application deployment. After approval, use the
+connections. Use the [staged Bicep infrastructure workflow](../infra/README.md)
+to create or reconcile the dedicated foundations, preauthorize separate
+control-plane/kubelet identities, and deploy AKS. Its private parameter files
+also drive the runtime deployment helper. The manual steps below explain the
+same wiring and evidence requirements. Follow the
 [AKS Workload Identity guide][identity] for a Linux/amd64
 cluster with OIDC and Workload Identity enabled, an ACR, and a dedicated
 user-assigned managed identity.

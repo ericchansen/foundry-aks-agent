@@ -20,7 +20,11 @@ jobs:
       - run: uv sync --locked --all-extras
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .
+      - name: Install pinned Bicep compiler (no Azure login)
+        run: az bicep install --version v0.45.15
       - run: uv run --locked pytest -q
+        env:
+          BICEP_TESTS: "1"
       - run: uv build --no-sources
       - name: Build runtime image
         run: docker build --tag boring-aks-agent:ci .

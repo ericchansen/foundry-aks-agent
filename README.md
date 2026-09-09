@@ -56,6 +56,11 @@ Follow the [deployment and evidence guide](docs/deployment.md). Configure
 environment variables through local process environment or Kubernetes
 ConfigMap/Secret references, never committed tenant-specific values.
 
+The [infrastructure workflow](infra/README.md) provides two staged Bicep
+deployments: dedicated foundations and prerequisite identity roles first, then
+AKS and federation. Its operator helpers preview changes, submit resumable ARM
+operations, and apply the private runtime without writing secrets to disk.
+
 | Variable | Purpose |
 | --- | --- |
 | `AGENT_API_TOKEN` | Required random bearer token, at least 32 characters |
