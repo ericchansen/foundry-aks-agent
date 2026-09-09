@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "foundry-aks-agent"
+version = "0.1.0"
+description = "One AKS-hosted Pydantic AI agent, visible in Foundry."
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "aiohttp>=3.12,<4",
+    "azure-identity>=1.17,<2",
+    "azure-monitor-opentelemetry-exporter>=1.0.0b48,<2",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "opentelemetry-sdk>=1.39,<2",
+    "pydantic-ai-slim[openai]==2.31.1",
+    "pydantic-settings>=2.10,<3",
+    "uvicorn>=0.34,<1",
+]
+
+[project.optional-dependencies]
+admin = ["azure-ai-projects>=2.3,<3"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+    "pytest-asyncio>=1,<2",
+    "ruff==0.15.12",
+    "pyyaml>=6,<7",
+]
+
+[project.scripts]
+aks-agent = "foundry_aks_agent.client:main"
+aks-agent-register = "foundry_aks_agent.register:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.uv]
+environments = [
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]

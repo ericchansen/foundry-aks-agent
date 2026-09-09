@@ -1,0 +1,50 @@
+name: Validate
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.0"
+          python-version: "3.12"
+      - run: uv sync --locked --all-extras
+      - run: uv run --locked ruff check .
+      - run: uv run --locked ruff format --check .
+      - run: uv run --locked pytest -q
+      - run: uv build --no-sources
+      - name: Build runtime image
+        run: docker build --tag boring-aks-agent:ci .
+      - name: Start hardened image without cloud access
+        run: |
+          docker run --detach --name agent-smoke --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+            --cap-drop ALL --security-opt no-new-privileges \
+            --publish 127.0.0.1:8000:8000 \
+            --env AGENT_API_TOKEN=local-ci-token-never-use-for-deployment \
+            --env AZURE_OPENAI_ENDPOINT=https://example.openai.azure.com \
+            --env AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini \
+            --env APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=00000000-0000-0000-0000-000000000000 \
+            --env APPLICATIONINSIGHTS_STATSBEAT_DISABLED=true \
+            --env RELEASE_ID=ci --env POD_NAME=ci --env POD_NAMESPACE=ci \
+            boring-aks-agent:ci
+          curl --fail --max-time 5 --retry 15 --retry-all-errors --retry-delay 1 \
+            http://127.0.0.1:8000/healthz | grep -Fx '{"status":"ready"}'
+          status=$(curl --silent --output /tmp/response.json --write-out '%{http_code}' \
+            --header 'Content-Type: application/json' --data '{"prompt":"Hello"}' \
+            http://127.0.0.1:8000/ask)
+          test "$status" = 401
+      - name: Stop smoke container
+        if: always()
+        run: |
+          docker logs agent-smoke || true
+          docker rm --force agent-smoke || true
