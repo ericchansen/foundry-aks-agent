@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boring-agent-config
+  namespace: boring-agent
+data:
+  AZURE_OPENAI_ENDPOINT: "https://REPLACE_WITH_APPROVED_RESOURCE.openai.azure.com/"
+  AZURE_OPENAI_DEPLOYMENT: "REPLACE_WITH_EXISTING_MODEL_DEPLOYMENT"
+  AZURE_OPENAI_API_VERSION: "2024-10-21"
+  OTEL_AGENT_ID: "boring-aks-agent-demo"
+  AGENT_NAME: "boring-aks-agent"
+  # Use the full commit SHA of the clean source built into the image.
+  RELEASE_ID: "REPLACE_WITH_FULL_COMMIT_SHA"
