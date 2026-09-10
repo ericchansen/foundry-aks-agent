@@ -1,0 +1,44 @@
+site_name: Foundry AKS agent
+site_description: Run the agent on AKS. Follow its traces in Foundry.
+site_url: https://ericchansen.github.io/foundry-aks-agent/
+repo_url: https://github.com/ericchansen/foundry-aks-agent
+edit_uri: edit/main/docs/
+strict: true
+
+theme:
+  name: null
+  custom_dir: docs_theme
+  static_templates:
+    - 404.html
+
+plugins: []
+markdown_extensions:
+  - admonition
+  - attr_list
+  - fenced_code
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+
+validation:
+  nav:
+    omitted_files: warn
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+
+nav:
+  - Overview: index.md
+  - Understand:
+      - Architecture: architecture.md
+      - Security & boundaries: security.md
+  - Build & run:
+      - Local development: development.md
+      - Configuration: configuration.md
+      - Infrastructure: infrastructure.md
+      - Deploy & demonstrate: deployment.md
+  - Verify:
+      - Evidence: evidence.md

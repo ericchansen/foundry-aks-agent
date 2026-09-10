@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="448" viewBox="0 0 960 448" role="img" aria-labelledby="title description">
+  <title id="title">AKS executes the request; Foundry shows its traces</title>
+  <desc id="description">Five components and four directed relationships. The operator CLI reaches the Pydantic AI workload through a loopback, RBAC-authorized port-forward. Only the service and agent are inside the AKS workload boundary. The agent requires a bearer token and calls the Foundry model using Workload Identity. Separately, OpenTelemetry spans export asynchronously to project-linked Application Insights, making traces available in Foundry. External registration is a separate metadata-only action, not an invocation route.</desc>
+  <defs>
+    <marker id="request-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="m1 1 6 3-6 3" fill="none" stroke="#204fce" stroke-width="1.8"/></marker>
+    <marker id="telemetry-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="m1 1 6 3-6 3" fill="none" stroke="#08756d" stroke-width="1.8"/></marker>
+  </defs>
+  <rect width="960" height="448" fill="#fff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <g id="boundary-aks">
+      <rect x="325" y="36" width="300" height="200" rx="14" fill="#eef3ff"/>
+      <text x="350" y="77" fill="#204fce" font-size="19" font-weight="600">AKS workload</text>
+    </g>
+    <g fill="none" stroke-width="2">
+      <path id="edge-port-forward" d="M200 160H350" stroke="#204fce" marker-end="url(#request-arrow)"/>
+      <path id="edge-model-call" d="M600 160H750" stroke="#204fce" marker-end="url(#request-arrow)"/>
+      <path id="edge-span-export" d="M475 210V320" stroke="#08756d" marker-end="url(#telemetry-arrow)"/>
+      <path id="edge-project-traces" d="M600 366H750" stroke="#08756d" marker-end="url(#telemetry-arrow)"/>
+    </g>
+    <g text-anchor="middle" font-size="16">
+      <text x="272" y="137" fill="#204fce">Port-forward</text>
+      <text x="272" y="188" fill="#566377">Loopback + RBAC</text>
+      <text x="675" y="137" fill="#204fce">Model call</text>
+      <text x="675" y="188" fill="#566377">Workload Identity</text>
+      <text x="675" y="343" fill="#08756d">Project-linked</text>
+      <text x="675" y="394" fill="#566377">Trace visibility</text>
+    </g>
+    <text x="493" y="271" fill="#08756d" font-size="17">OpenTelemetry</text>
+    <text x="493" y="294" fill="#566377" font-size="16">Async span export</text>
+    <g id="node-cli">
+      <rect x="20" y="110" width="180" height="100" rx="8" fill="#f3f5f9"/>
+      <text x="42" y="151" fill="#202a3b" font-size="22" font-weight="650">Operator CLI</text>
+      <text x="42" y="181" fill="#566377" font-size="17">aks-agent</text>
+    </g>
+    <g id="node-agent">
+      <rect x="350" y="110" width="250" height="100" rx="8" fill="#fff" stroke="#204fce" stroke-width="1.5"/>
+      <text x="372" y="143" fill="#202a3b" font-size="22" font-weight="650">Pydantic AI agent</text>
+      <text x="372" y="171" fill="#566377" font-size="17">FastAPI + ClusterIP service</text>
+      <text x="372" y="194" fill="#204fce" font-size="16">Bearer token required</text>
+    </g>
+    <g id="node-model">
+      <rect x="750" y="110" width="180" height="100" rx="8" fill="#f3f5f9"/>
+      <text x="770" y="151" fill="#202a3b" font-size="20" font-weight="650">Foundry model</text>
+      <text x="770" y="181" fill="#566377" font-size="17">Chat completion</text>
+    </g>
+    <g id="node-insights">
+      <rect x="350" y="320" width="250" height="92" rx="8" fill="#eaf6f3"/>
+      <text x="372" y="357" fill="#202a3b" font-size="22" font-weight="650">Application Insights</text>
+      <text x="372" y="386" fill="#365d59" font-size="17">Connected to the project</text>
+    </g>
+    <g id="node-foundry">
+      <rect x="750" y="320" width="180" height="92" rx="8" fill="#eaf6f3"/>
+      <text x="770" y="357" fill="#202a3b" font-size="22" font-weight="650">Foundry</text>
+      <text x="770" y="386" fill="#365d59" font-size="17">Agent traces</text>
+    </g>
+  </g>
+</svg>
