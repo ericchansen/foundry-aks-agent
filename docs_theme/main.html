@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+THESIS: An engineer's field guide. Show the request path before the deployment instructions.
+OWN-WORLD: White and graphite, cobalt for requests, teal for telemetry; system type and precise SVG.
+STORY: Understand where execution lives, reproduce an authenticated request, correlate its evidence.
+FIRST VIEWPORT: Compact left navigation, direct heading and summary, a two-lane architecture figure.
+FORM: A reading surface, not a slide deck or marketing page. Native links and disclosure navigation.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="{{ (page.meta.description if page and page.meta.description else config.site_description) | e }}">
+    <title>{% if page and not page.is_homepage %}{{ page.title | e }} - {% endif %}{{ config.site_name | e }}</title>
+    {% if page and page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url | e }}">{% endif %}
+    <link rel="icon" href="{{ 'assets/favicon.svg' | url }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ 'assets/site.css' | url }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    {% macro navigation() %}
+      <ul class="nav-list">
+        {% for item in nav %}
+          {% if item.children %}
+            <li class="nav-group">
+              <span class="nav-heading">{{ item.title | e }}</span>
+              <ul>
+                {% for child in item.children %}
+                  <li><a href="{{ child.url | url }}"{% if child.active %} aria-current="page"{% endif %}>{{ child.title | e }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% else %}
+            <li><a href="{{ item.url | url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.title | e }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    {% endmacro %}
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="{{ nav.homepage.url | url }}">Foundry <span>AKS agent</span></a>
+        <nav class="desktop-nav" aria-label="Documentation">{{ navigation() }}</nav>
+        <details class="mobile-nav">
+          <summary>Documentation{% if page %} / {{ page.title | e }}{% endif %}</summary>
+          <nav aria-label="Documentation">{{ navigation() }}</nav>
+        </details>
+        <a class="repo-link" href="{{ config.repo_url }}">Source on GitHub <span aria-hidden="true">&#8599;</span></a>
+      </aside>
+      <main id="main" tabindex="-1">
+        {% if page %}
+          <article{% if page.is_homepage %} class="overview"{% endif %}>
+            {{ page.content }}
+          </article>
+          <footer class="page-footer">
+            {% if page.previous_page %}<a href="{{ page.previous_page.url | url }}"><span>Previous</span>{{ page.previous_page.title | e }}</a>{% endif %}
+            {% if page.next_page %}<a href="{{ page.next_page.url | url }}"><span>Next</span>{{ page.next_page.title | e }}</a>{% endif %}
+            {% if page.edit_url %}<a class="edit-link" href="{{ page.edit_url }}">Edit this page <span aria-hidden="true">&#8599;</span></a>{% endif %}
+          </footer>
+        {% else %}
+          <h1>Page not found</h1>
+          <p>That address does not match a guide. <a href="{{ config.site_url }}">Return to the overview.</a></p>
+        {% endif %}
+      </main>
+      {% if page and not page.is_homepage and page.toc %}
+        <nav class="page-toc" aria-label="On this page">
+          <span class="nav-heading">On this page</span>
+          <ul>
+            {% for heading in page.toc %}
+              {% for section in heading.children %}
+                <li><a href="{{ section.url }}">{{ section.title | striptags | e }}</a></li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </nav>
+      {% endif %}
+    </div>
+  </body>
+</html>
