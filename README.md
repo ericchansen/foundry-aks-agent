@@ -14,14 +14,13 @@ CLI -> Kubernetes port-forward -> authenticated AKS service -> Foundry model
 
 ## Status and scope
 
-This repository implements the baseline runtime, command-line client,
-registration tooling, tests, and deployment assets. **The AKS workload and
-Foundry demonstration are not complete.** Provisioning was approved and started:
-the dedicated registry/image, Foundry project/model, identity, and connected
-telemetry resources exist. AKS creation stalled in two regions without a usable
-control plane; the empty cluster attempts and their managed node groups were
-removed. No real AKS model request, external-agent registration, or attributed
-live trace is claimed. See the [deployment record](docs/deployment.md#deployment-record).
+**The live AKS runtime, authenticated model call, Path A registration, and
+project-linked native traces are demonstrated.** The same request is correlated
+across its model answer, actual pod/image digest, stable agent ID, and native
+agent/model span parent chain. The repository includes the CLI, staged Bicep,
+runtime deployment helpers, and reproduction instructions. See the
+[deployment record and evidence](docs/deployment.md#deployment-record), including
+the inherited Network policy prerequisite that caused the initial AKS stalls.
 
 Path B (APIM/AI Gateway), evaluation, tools, document search, ingestion, and a web
 UI are deferred. External registration is preview metadata/telemetry integration,

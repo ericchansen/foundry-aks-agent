@@ -262,6 +262,76 @@ errors securely in Azure. The helper suppresses raw CLI errors because those
 can contain connection credentials. On terminal failure, resolve the cause
 before resubmitting; it will reconcile resources that already succeeded.
 
+### Public-IP feature gate hidden by a nonterminal AKS operation
+
+In this demo, failed child-resource writes exposed the useful error while the
+AKS operation remained `InProgress` and credential retrieval returned
+`ControlPlaneNotFound`. Inspect **failed events in the managed node RG**, not
+only the cluster resource or a capped list of mixed read/write activity:
+
+```powershell
+$nodeRg = '<the-nodeResourceGroupName-parameter>'
+az monitor activity-log list --subscription $sub --resource-group $nodeRg `
+  --offset 6h --status Failed --max-events 100 `
+  --query '[].{time:eventTimestamp,resourceId:resourceId,operation:operationName.value,message:properties.statusMessage}' `
+  --output json
+```
+
+Review detailed errors privately; do not publish tenant identifiers or
+unredacted request payloads. A capped query is not an exhaustive event count.
+The observed `Microsoft.Network/publicIPAddresses/write` failure was:
+
+```text
+SubscriptionNotRegisteredForFeature
+Microsoft.Network/AllowBringYourOwnPublicIpAddress
+```
+
+`Microsoft.Network` being `Registered` does **not** establish that this separate
+feature is registered. The feature name also does not establish that the
+template requested customer-owned IP space: an
+[official Azure CLI test recording](https://github.com/Azure/azure-cli/blob/dev/src/azure-cli/azure/cli/command_modules/network/tests/latest/recordings/test_network_ag_root_cert.yaml)
+shows the same error for a Standard public IP carrying a `FirstPartyUsage`
+IP tag, without a supplied IP address or prefix.
+
+In the live investigation, successful `Microsoft.Authorization/policies/append/action`
+events immediately preceded the failed Network writes. Their `fields` identified
+`Microsoft.Network/publicIPAddresses/ipTags[*]`, and their `policies` metadata
+identified an inherited management-group assignment. The successfully created
+public IP subsequently carried a `FirstPartyUsage` tag. Thus the extra
+prerequisite came from inherited policy, not a BYO address in the AKS template.
+An empty RG-scoped policy-assignment listing did not rule out that inheritance.
+Inspect the activity event's policy metadata before drawing that conclusion;
+do not remove or exempt a governance policy to bypass this prerequisite.
+
+When the exact error is present, obtain authorization for the
+**subscription-level** feature change before following Microsoft's
+[documented registration sequence](https://github.com/Azure-Samples/chat-with-your-data-solution-accelerator/blob/main/docs/TroubleShootingSteps.md):
+
+```powershell
+az feature register --subscription $sub --namespace Microsoft.Network `
+  --name AllowBringYourOwnPublicIpAddress --output none
+if ($LASTEXITCODE -ne 0) { throw 'Feature registration request failed' }
+$featureState = az feature show --subscription $sub --namespace Microsoft.Network `
+  --name AllowBringYourOwnPublicIpAddress --query properties.state --output tsv
+if ($LASTEXITCODE -ne 0 -or $featureState -ne 'Registered') {
+    throw 'Feature is not Registered. Inspect its state; Pending may require approval.'
+}
+az provider register --subscription $sub --namespace Microsoft.Network --wait
+if ($LASTEXITCODE -ne 0) { throw 'Network provider refresh failed' }
+```
+
+Some registrations require approval; a
+[Microsoft Q&A answer for this exact feature](https://learn.microsoft.com/en-us/answers/a/1536598)
+describes that requirement for internal subscriptions. Do not treat `Pending`
+as success, promise immediate approval, or create a custom IP prefix to work
+around the gate. This enablement can unblock the already-approved billable AKS
+resources. It is not automatically applied by the RG-scoped templates or helpers.
+
+After registration, observe the **existing** operation: require successful
+public-IP writes, actual node resources, cluster readiness, and the live
+request/trace evidence. Do not equate registration with a completed deployment
+or submit a competing cluster update while reconciliation remains active.
+
 ## Apply the private runtime
 
 After cluster `Succeeded`, confirm two Ready nodes, OIDC issuer and federation,
