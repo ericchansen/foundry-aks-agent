@@ -2,7 +2,7 @@
 
 One Pydantic AI agent runs on AKS, serves an authenticated HTTP endpoint, and
 makes one model call per request. Foundry Path A adds external-agent registration
-and attributed traces. **Execution stays on AKS.**
+plus attributed traces and trace-based evaluation. **Execution stays on AKS.**
 
 > [!IMPORTANT]
 > This project uses Microsoft's
@@ -40,14 +40,16 @@ Local tests do not call Azure. Continue with [local development](docs/developmen
 This repository contains a single-operator, synthetic-data reference deployment.
 It includes a private AKS application service, shared bearer authentication,
 Workload Identity, one model call per request, Path A external-agent registration,
-and correlated native traces. The [verification guide](docs/evidence.md) defines
-the evidence required for a deployment. Read the
+correlated native traces, synthetic traffic generation, and one-off trace
+evaluation. A dedicated GPT-5 judge deployment also enables on-demand Foundry
+Insights scans. The [verification guide](docs/evidence.md) defines the evidence
+required for a deployment. Read the
 [security boundaries](docs/security.md) before deployment.
 
-Path B (APIM/AI Gateway), evaluation, tools, document search, ingestion, and an
-agent web UI are outside this repository. External registration is metadata and
-telemetry integration, not hosted-agent feature parity or a Foundry invocation
-endpoint.
+Path B (APIM/AI Gateway), tools, document search, ingestion, multi-turn state,
+scheduled Insights or evaluation, and an agent web UI are outside this
+repository. External registration is metadata and telemetry integration, not
+hosted-agent feature parity or a Foundry invocation endpoint.
 
 ## License
 

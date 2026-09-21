@@ -26,7 +26,7 @@ def create_agent(model: Model, settings: Settings, provider: TracerProvider) -> 
             Instrumentation(
                 settings=InstrumentationSettings(
                     tracer_provider=provider,
-                    include_content=False,
+                    include_content=True,
                     include_binary_content=False,
                     version=5,
                 )

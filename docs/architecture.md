@@ -48,6 +48,11 @@ Foundry's external-agent Traces view. The [verification guide](evidence.md)
 defines the required correlation; [deployment step 6](deployment.md#6-register-and-prove-foundry-attribution)
 provides the procedure.
 
+Foundry's trace evaluation reads the same ingested telemetry through an
+agent-scoped time window. It does not add a request route or move evaluation
+execution into the AKS pod. See
+[deployment step 7](deployment.md#7-evaluate-the-ingested-traces).
+
 ## What registration changes
 
 The optional [administrative tool](https://github.com/ericchansen/foundry-aks-agent/blob/main/src/foundry_aks_agent/register.py)

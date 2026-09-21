@@ -77,12 +77,27 @@ def test_foundry_model_and_connection_contract(templates):
     assert account["identity"]["type"] == "SystemAssigned"
     assert account["properties"]["allowProjectManagement"] is True
     assert account["properties"]["disableLocalAuth"] is True
-    model = resource(template, "Microsoft.CognitiveServices/accounts/deployments")
-    assert model["properties"]["versionUpgradeOption"] == "NoAutoUpgrade"
+    models = [
+        item
+        for item in template["resources"]
+        if item["type"] == "Microsoft.CognitiveServices/accounts/deployments"
+    ]
+    assert len(models) == 2
+    runtime_model = next(item for item in models if "modelDeploymentName" in item["name"])
+    evaluation_model = next(
+        item for item in models if "evaluationModelDeploymentName" in item["name"]
+    )
+    assert runtime_model["properties"]["versionUpgradeOption"] == "NoAutoUpgrade"
+    assert evaluation_model["properties"]["versionUpgradeOption"] == "NoAutoUpgrade"
+    assert any("modelDeploymentName" in dependency for dependency in evaluation_model["dependsOn"])
     assert template["parameters"]["modelName"]["defaultValue"] == "gpt-4.1-mini"
     assert template["parameters"]["modelVersion"]["defaultValue"] == "2025-04-14"
     assert template["parameters"]["modelSku"]["defaultValue"] == "GlobalStandard"
     assert template["parameters"]["modelCapacity"]["defaultValue"] == 1
+    assert template["parameters"]["evaluationModelName"]["defaultValue"] == "gpt-5-mini"
+    assert template["parameters"]["evaluationModelVersion"]["defaultValue"] == "2025-08-07"
+    assert template["parameters"]["evaluationModelSku"]["defaultValue"] == "GlobalStandard"
+    assert template["parameters"]["evaluationModelCapacity"]["defaultValue"] == 10
     connection = resource(template, "Microsoft.CognitiveServices/accounts/projects/connections")
     assert connection["apiVersion"] == "2026-05-01"
     props = connection["properties"]
@@ -131,32 +146,80 @@ def test_explicit_control_plane_and_kubelet_identities(templates):
 
 
 def test_scoped_roles_and_no_broad_bootstrap_grants(templates):
-    expected = {
-        "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd": (
+    expected = [
+        (
+            "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
             "Microsoft.CognitiveServices/accounts",
             "workload",
+            "modelUserAssignmentName",
         ),
-        "7f951dda-4ed3-4680-a7ca-43fe172d538d": (
+        (
+            "7f951dda-4ed3-4680-a7ca-43fe172d538d",
             "Microsoft.ContainerRegistry/registries",
             "kubelet",
+            "acrPullAssignmentName",
         ),
-        "f1a07417-d97a-45cb-824c-7a7467783830": (
+        (
+            "f1a07417-d97a-45cb-824c-7a7467783830",
             "Microsoft.ManagedIdentity/userAssignedIdentities",
             "controlPlane",
+            "identityOperatorAssignmentName",
         ),
-        "53ca6127-db72-4b80-b1b0-d745d6d5456d": (
+        (
+            "53ca6127-db72-4b80-b1b0-d745d6d5456d",
             "Microsoft.CognitiveServices/accounts/projects",
             "operatorObjectId",
+            "foundryUserAssignmentName",
         ),
-        "acdd72a7-3385-48ef-bd42-f606fba81ae7": (
+        (
+            "53ca6127-db72-4b80-b1b0-d745d6d5456d",
+            "Microsoft.CognitiveServices/accounts",
+            "Microsoft.CognitiveServices/accounts/projects",
+            "projectFoundryUserAssignmentName",
+        ),
+        (
+            "43d0d8ad-25c7-4714-9337-8ba259a9fe05",
+            "Microsoft.Insights/components",
+            "operatorObjectId",
+            "operatorMonitoringReaderAssignmentName",
+        ),
+        (
+            "dbc9c667-e97f-4491-aee6-90b9cf960190",
+            "Microsoft.Insights/components",
+            "operatorObjectId",
+            "operatorPrivilegedMonitoringDataReaderAssignmentName",
+        ),
+        (
+            "acdd72a7-3385-48ef-bd42-f606fba81ae7",
             "Microsoft.Insights/components",
             "Microsoft.CognitiveServices/accounts/projects",
+            "projectInsightsReaderAssignmentName",
         ),
-        "b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b": (
+        (
+            "43d0d8ad-25c7-4714-9337-8ba259a9fe05",
+            "Microsoft.Insights/components",
+            "Microsoft.CognitiveServices/accounts/projects",
+            "projectMonitoringReaderAssignmentName",
+        ),
+        (
+            "73c42c96-874c-492b-b04d-ab87d138a893",
+            "Microsoft.Insights/components",
+            "Microsoft.CognitiveServices/accounts/projects",
+            "projectLogAnalyticsReaderAssignmentName",
+        ),
+        (
+            "dbc9c667-e97f-4491-aee6-90b9cf960190",
+            "Microsoft.Insights/components",
+            "Microsoft.CognitiveServices/accounts/projects",
+            "projectPrivilegedMonitoringDataReaderAssignmentName",
+        ),
+        (
+            "b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b",
             "Microsoft.ContainerService/managedClusters",
             "operatorObjectId",
+            "clusterAdminAssignmentName",
         ),
-    }
+    ]
     assignments = [
         r
         for template in templates.values()
@@ -164,17 +227,19 @@ def test_scoped_roles_and_no_broad_bootstrap_grants(templates):
         if r["type"] == "Microsoft.Authorization/roleAssignments"
     ]
     assert len(assignments) == len(expected)
-    for assignment in assignments:
-        props = assignment["properties"]
-        role_id = next(role for role in expected if role in props["roleDefinitionId"])
-        scope, principal = expected[role_id]
-        assert scope in assignment["scope"]
-        assert principal in props["principalId"]
+    for role_id, scope, principal, assignment_name in expected:
+        matches = [
+            assignment
+            for assignment in assignments
+            if role_id in assignment["properties"]["roleDefinitionId"]
+            and scope in assignment["scope"]
+            and principal in assignment["properties"]["principalId"]
+        ]
+        assert len(matches) == 1
+        assignment = matches[0]
+        assert assignment_name in assignment["name"]
         if role_id == "f1a07417-d97a-45cb-824c-7a7467783830":
             assert "kubeletIdentityName" in assignment["scope"]
-        if role_id == "acdd72a7-3385-48ef-bd42-f606fba81ae7":
-            assert ".identity.principalId" in props["principalId"]
-            assert "projectInsightsReaderAssignmentName" in assignment["name"]
 
 
 def test_aks_system_pool_network_and_auth(templates):

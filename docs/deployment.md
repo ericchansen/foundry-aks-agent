@@ -200,6 +200,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Agent request failed' }
     $Reply
     if ($Reply.trace_id -notmatch '^[0-9a-f]{32}$') { throw 'Missing trace identity' }
+    uv run --locked aks-agent-traffic
+    if ($LASTEXITCODE -ne 0) { throw 'Synthetic traffic generation failed' }
 } finally {
     Remove-Item Env:AGENT_API_TOKEN -ErrorAction SilentlyContinue
     Remove-Variable SecureToken -ErrorAction SilentlyContinue
@@ -207,7 +209,9 @@ try {
 ```
 
 The actual request schema is `{"prompt":"..."}`; OpenAPI endpoints are disabled.
-Use synthetic data only. The response must contain an answer, `trace_id`,
+The traffic command sends a short built-in set of domain-neutral prompts. Use
+It spaces calls to respect the example model deployment's one-request-per-minute
+quota. Use synthetic data only. The response must contain an answer, `trace_id`,
 `agent_id`, `release_id`, `pod_name`, and `pod_namespace`.
 Compare these with the workload:
 
@@ -225,9 +229,13 @@ credential, not per-user authorization or human delegation.
 
 ## 6. Register and prove Foundry attribution
 
-Use an approved administrative identity with project registration permissions
-and Reader/Monitoring Reader on the connected Insights resource. Set the
-administrative environment to match the runtime:
+Use an approved administrative identity with project registration permissions.
+The operator receives Monitoring Reader and Privileged Monitoring Data Reader
+on the connected Insights resource. The Foundry project identity separately
+needs Foundry User on the Foundry account for judge-model inference plus Reader,
+Monitoring Reader, Log Analytics Reader, and Privileged Monitoring Data Reader
+on that exact Insights resource. The foundation template assigns these scoped
+roles. Set the administrative environment to match the runtime:
 
 ```powershell
 $env:FOUNDRY_PROJECT_ENDPOINT = '<approved-project-endpoint>'
@@ -275,7 +283,50 @@ If KQL has spans but Foundry does not, check project linkage, viewer permissions
 registration identity, time range, and preview support. If neither has spans,
 check exporter errors and allowed outbound connectivity. Do not substitute a
 successful registration, healthy pod, unrelated trace, or generic Azure Monitor
-visibility for this evidence. Evaluation and Path B are outside this repository.
+visibility for this evidence. Path B is outside this repository.
+
+## 7. Evaluate the ingested traces
+
+Wait for the synthetic traffic to appear under the registered external agent,
+then keep the administrative environment from step 6 and set the evaluator
+model deployment:
+
+```powershell
+$env:FOUNDRY_MODEL_NAME = 'gpt-5-mini'
+uv run --locked --extra admin aks-agent-evaluate
+```
+
+The command creates a one-off trace evaluation for recent interactions, uses
+Foundry's built-in `intent_resolution` evaluator, waits for a terminal result,
+and prints aggregate counts. A failed, canceled, or timed-out run exits
+unsuccessfully.
+
+Open the external agent's **Evaluation** view in Foundry and confirm the same
+run and criterion results are present. If every item reports a missing user
+message, verify that the deployed image records prompt/response content and
+that the project identity has
+[Foundry User](https://learn.microsoft.com/azure/foundry/agents/concepts/hosted-agent-permissions#azure-resource-setup)
+on the Foundry account plus
+[Monitoring Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/monitor#monitoring-reader),
+[Log Analytics Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/monitor#log-analytics-reader)
+and
+[Privileged Monitoring Data Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/monitor#privileged-monitoring-data-reader)
+on the connected Application Insights component.
+
+## 8. Run an on-demand Insights scan
+
+Open the external agent's **Insights** tab in Foundry. Select the dedicated
+`gpt-5-mini` judge deployment, then select **Run scan now**. The scan analyzes
+recent traces asynchronously and can be reviewed later from the same tab.
+
+The first scan uses the available trace history, so a successful run does not
+guarantee that an Insight is generated. The trace set must contain recurring
+behavior with enough evidence. Keep scheduling disabled for this single-operator
+demo; scheduled scans continue after the operator session and incur model
+charges.
+
+See Microsoft's
+[Insights workflow and troubleshooting guidance](https://learn.microsoft.com/azure/foundry/observability/how-to/agent-insights).
 
 ## Cleanup
 

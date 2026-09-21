@@ -84,11 +84,12 @@ def test_answer_and_actual_pydantic_run_model_spans(settings, telemetry):
     runs = [s for s in spans if s.attributes.get("gen_ai.operation.name") == "invoke_agent"]
     models = [s for s in spans if s.attributes.get("gen_ai.operation.name") == "chat"]
     assert len(runs) == len(models) == 1
+    serialized = "\n".join(str(span.attributes) for span in spans)
+    assert "Reply with a short greeting." in serialized
+    assert "Hello from the test model!" in serialized
     for span in spans:
         assert span.attributes["gen_ai.agent.id"] == settings.otel_agent_id
         assert format(span.context.trace_id, "032x") == body["trace_id"]
-        assert "Reply with a short greeting." not in str(span.attributes)
-        assert "Hello from the test model!" not in str(span.attributes)
     assert models[0].parent.span_id == runs[0].context.span_id
 
 

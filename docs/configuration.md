@@ -18,7 +18,8 @@ is the authoritative validation contract.
 | `OTEL_AGENT_ID` | Defaults to `boring-aks-agent-demo`; identical in runtime and registration |
 | `RELEASE_ID` | Required image/release identifier |
 | `POD_NAME`, `POD_NAMESPACE` | Required workload attribution, populated by Kubernetes |
-| `FOUNDRY_PROJECT_ENDPOINT` | Required only by administrative registration tooling |
+| `FOUNDRY_PROJECT_ENDPOINT` | Required by administrative registration and evaluation tooling |
+| `FOUNDRY_MODEL_NAME` | Judge deployment for evaluation; defaults to `gpt-5-mini` |
 
 Use the deployment helper's [private runtime workflow](infrastructure.md#apply-the-private-runtime)
 to apply these values. It delivers secrets in memory over stdin, not in committed
@@ -37,6 +38,11 @@ accepts a nonblank prompt of at most 4,000 characters. The
 allows one model request, caps output at 128 tokens, sets a 45-second model
 timeout, and disables retries. It has no tools or conversation store.
 
+Native instrumentation records the synthetic prompt and response content,
+model usage, and request parameters needed by the Foundry trace and evaluation
+experiences. Binary content remains excluded. Do not send sensitive or
+customer data to this example.
+
 ## HTTP contract
 
 `POST /ask` accepts JSON with a `prompt` and requires a bearer token.
@@ -45,6 +51,15 @@ Use the CLI so the token stays out of command-line arguments:
 ```powershell
 uv run --locked aks-agent --prompt "Reply with a short greeting."
 ```
+
+Generate a small domain-neutral trace corpus with the same endpoint and token:
+
+```powershell
+uv run --locked aks-agent-traffic
+```
+
+The command spaces requests to respect the example deployment's
+one-request-per-minute model quota.
 
 This requires the [authorized loopback port-forward and securely loaded token](deployment.md#5-prove-an-authenticated-aks-model-request).
 The [response schema](https://github.com/ericchansen/foundry-aks-agent/blob/main/src/foundry_aks_agent/app.py)
@@ -76,3 +91,23 @@ uses `FOUNDRY_PROJECT_ENDPOINT`, `AGENT_NAME`, and `OTEL_AGENT_ID`.
 It reuses a matching record and rejects a conflicting kind/identity without
 overwriting it. Registration changes metadata only: it provisions and invokes
 no runtime. See [the complete registration and attribution procedure](deployment.md#6-register-and-prove-foundry-attribution).
+
+## Evaluation
+
+After synthetic traffic appears under the registered external agent, run the
+one-off trace evaluation:
+
+```powershell
+uv run --locked --extra admin aks-agent-evaluate
+```
+
+The evaluator uses `FOUNDRY_PROJECT_ENDPOINT`, `AGENT_NAME`, and
+`FOUNDRY_MODEL_NAME`. It evaluates recent agent traces with Foundry's
+built-in `intent_resolution` criterion and prints aggregate pass, fail, and
+error counts. The Foundry project managed identity requires the scoped
+Foundry account and Application Insights roles documented in
+[deployment step 7](deployment.md#7-evaluate-the-ingested-traces).
+
+The same `gpt-5-mini` deployment appears in the agent's **Insights** tab as the
+judge model for an on-demand scan. See
+[deployment step 8](deployment.md#8-run-an-on-demand-insights-scan).
