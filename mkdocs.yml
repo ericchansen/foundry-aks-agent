@@ -39,6 +39,6 @@ nav:
       - Local development: development.md
       - Configuration: configuration.md
       - Infrastructure: infrastructure.md
-      - Deploy & demonstrate: deployment.md
+      - Deploy & verify: deployment.md
   - Verify:
-      - Evidence: evidence.md
+      - Deployment verification: evidence.md

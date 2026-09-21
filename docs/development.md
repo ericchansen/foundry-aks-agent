@@ -78,11 +78,10 @@ The design follows
 
 The [docs workflow](https://github.com/ericchansen/foundry-aks-agent/blob/main/.github/workflows/docs.yml)
 builds pull requests without deployment permissions and publishes only from
-`main`. To enable the first deployment, choose **Settings > Pages > Build and
-deployment > Source > GitHub Actions** in the repository's
-[Pages settings](https://github.com/ericchansen/foundry-aks-agent/settings/pages).
+`main`. The repository's [Pages settings](https://github.com/ericchansen/foundry-aks-agent/settings/pages)
+use **GitHub Actions** as the build and deployment source.
 See [GitHub's custom workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-After merge and a successful deployment, the public address is
+The public address is
 [ericchansen.github.io/foundry-aks-agent](https://ericchansen.github.io/foundry-aks-agent/).
 Publishing the documentation never deploys or exposes the agent runtime.

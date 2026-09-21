@@ -44,9 +44,9 @@ Application Insights resource**. The request-scoped identity processor sets
 
 A returned answer proves neither export nor ingestion. Require the matching
 request in the client output, deployed workload, project-linked Insights, and
-Foundry's external-agent Traces view. The [evidence guide](evidence.md) records
-an observed example; [deployment step 6](deployment.md#6-register-and-prove-foundry-attribution)
-explains how to reproduce the correlation.
+Foundry's external-agent Traces view. The [verification guide](evidence.md)
+defines the required correlation; [deployment step 6](deployment.md#6-register-and-prove-foundry-attribution)
+provides the procedure.
 
 ## What registration changes
 
@@ -55,10 +55,10 @@ creates or reuses an external-agent record, then reads back its `otel_agent_id`.
 It must match the runtime's `OTEL_AGENT_ID`. Registration is a separate
 administrative action, not a step in each request.
 
-This is [Path A, currently a preview integration](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent).
+This repository uses [Path A, a preview integration](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent).
 It does not provision a runtime, provide a Foundry Responses invocation endpoint,
 or imply hosted-agent feature parity. [Path B](https://learn.microsoft.com/en-us/azure/foundry/control-plane/register-custom-agent)
-is a different mechanism and is not implemented here.
+is a different mechanism outside this repository.
 
 ## Infrastructure is not the request path
 

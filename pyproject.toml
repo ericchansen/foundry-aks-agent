@@ -7,6 +7,7 @@ name = "foundry-aks-agent"
 version = "0.1.0"
 description = "One AKS-hosted Pydantic AI agent, visible in Foundry."
 requires-python = ">=3.11,<3.14"
+license = "MIT"
 dependencies = [
     "aiohttp>=3.12,<4",
     "azure-identity>=1.17,<2",
