@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     applicationinsights_connection_string: SecretStr
     otel_agent_id: str = Field(default="boring-aks-agent-demo", min_length=1)
     agent_name: str = Field(default="boring-aks-agent", pattern=r"^[a-zA-Z0-9_-]+$")
+    agent_version: str = Field(default="1", min_length=1)
     release_id: str = Field(min_length=1)
     pod_name: str = Field(min_length=1)
     pod_namespace: str = Field(min_length=1)

@@ -89,6 +89,8 @@ def test_answer_and_actual_pydantic_run_model_spans(settings, telemetry):
     assert "Hello from the test model!" in serialized
     for span in spans:
         assert span.attributes["gen_ai.agent.id"] == settings.otel_agent_id
+        assert span.attributes["gen_ai.agent.name"] == settings.agent_name
+        assert span.attributes["gen_ai.agent.version"] == settings.agent_version
         assert format(span.context.trace_id, "032x") == body["trace_id"]
     assert models[0].parent.span_id == runs[0].context.span_id
 
@@ -184,8 +186,9 @@ def test_azure_exporter_receives_the_scoped_provider(settings, monkeypatch, tele
             with provider.get_tracer(__name__).start_as_current_span("scoped-export"):
                 pass
         assert provider.force_flush()
-        assert exporter.get_finished_spans()[0].attributes["gen_ai.agent.id"] == (
-            settings.otel_agent_id
-        )
+        attributes = exporter.get_finished_spans()[0].attributes
+        assert attributes["gen_ai.agent.id"] == settings.otel_agent_id
+        assert attributes["gen_ai.agent.name"] == settings.agent_name
+        assert attributes["gen_ai.agent.version"] == settings.agent_version
     finally:
         provider.shutdown()
