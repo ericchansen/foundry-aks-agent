@@ -3,6 +3,12 @@
 This is a single-operator synthetic-data demo, not a production authorization
 design. A shared caller token is not user identity or human delegation.
 
+The Microsoft Foundry
+[external-agent feature is in public preview](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent).
+Microsoft provides the preview without a service-level agreement and does not
+recommend it for production workloads. This repository uses only registration
+and trace visibility from that feature.
+
 ## Network and identity
 
 The [ClusterIP service](https://github.com/ericchansen/foundry-aks-agent/blob/main/deploy/service.yaml)

@@ -98,7 +98,7 @@ Edit these copies before proceeding:
 
 - Every `REPLACE_WITH_*` value must be replaced. The account and registry names
   must satisfy their Azure naming/global-uniqueness constraints. Set the real
-  **existing names** when adopting the already-created dedicated resources.
+  **existing names** when adopting dedicated resources.
 - Match all three identity names, location, operator object ID/type between
   files. The identities must be distinct. The node RG must differ from `$rg`.
   `cluster.bicep` references precreated identities only in `$rg`.
@@ -114,7 +114,7 @@ Edit these copies before proceeding:
   Account for a changing operator/VPN egress address before restricting it.
 - Normal ARM incremental deployment **reconciles** named resources: it is not
   an `existing`/read-only adoption mode. Check current properties first; tags
-  and declared properties will converge to these templates. Do not use
+  and declared properties converge to these templates. Do not use
   complete deployment mode. Do not run foundation/model reconciliation during
   a serving test unless an intentional update is acceptable.
 - Taggable resources inherit the existing demo RG's tags, including lifecycle
@@ -131,7 +131,7 @@ To eliminate reliance on AKS-side key generation for a fresh bootstrap, supply
 private cluster parameter file. An empty public key omits `linuxProfile`; it
 does **not** assert that server-side key generation or the SSH daemon is disabled.
 This option removes a bootstrap dependency; it is **not** a confirmed diagnosis
-of any previous `Creating` operation.
+of a `Creating` operation.
 
 Generate a **new demo-scoped RSA key**, explicitly outside the repository in a
 private session directory. Never use the operator's `~/.ssh` keys. For example:
@@ -260,13 +260,12 @@ delete/recreate, or launch alternative regions while a cluster is
 `Creating`/`Updating`/`InProgress`. Preserve operation IDs and inspect detailed
 errors securely in Azure. The helper suppresses raw CLI errors because those
 can contain connection credentials. On terminal failure, resolve the cause
-before resubmitting; it will reconcile resources that already succeeded.
+before resubmitting; a resubmission reconciles existing resources.
 
-### Public-IP feature gate hidden by a nonterminal AKS operation
+### Diagnose a public-IP feature gate
 
-In this demo, failed child-resource writes exposed the useful error while the
-AKS operation remained `InProgress` and credential retrieval returned
-`ControlPlaneNotFound`. Inspect **failed events in the managed node RG**, not
+When an AKS operation remains `InProgress` and credential retrieval returns
+`ControlPlaneNotFound`, inspect **failed events in the managed node RG**, not
 only the cluster resource or a capped list of mixed read/write activity:
 
 ```powershell
@@ -279,7 +278,7 @@ az monitor activity-log list --subscription $sub --resource-group $nodeRg `
 
 Review detailed errors privately; do not publish tenant identifiers or
 unredacted request payloads. A capped query is not an exhaustive event count.
-The observed `Microsoft.Network/publicIPAddresses/write` failure was:
+One relevant `Microsoft.Network/publicIPAddresses/write` error is:
 
 ```text
 SubscriptionNotRegisteredForFeature
@@ -288,20 +287,17 @@ Microsoft.Network/AllowBringYourOwnPublicIpAddress
 
 `Microsoft.Network` being `Registered` does **not** establish that this separate
 feature is registered. The feature name also does not establish that the
-template requested customer-owned IP space: an
+template requests customer-owned IP space: an
 [official Azure CLI test recording](https://github.com/Azure/azure-cli/blob/dev/src/azure-cli/azure/cli/command_modules/network/tests/latest/recordings/test_network_ag_root_cert.yaml)
 shows the same error for a Standard public IP carrying a `FirstPartyUsage`
 IP tag, without a supplied IP address or prefix.
 
-In the live investigation, successful `Microsoft.Authorization/policies/append/action`
-events immediately preceded the failed Network writes. Their `fields` identified
-`Microsoft.Network/publicIPAddresses/ipTags[*]`, and their `policies` metadata
-identified an inherited management-group assignment. The successfully created
-public IP subsequently carried a `FirstPartyUsage` tag. Thus the extra
-prerequisite came from inherited policy, not a BYO address in the AKS template.
-An empty RG-scoped policy-assignment listing did not rule out that inheritance.
-Inspect the activity event's policy metadata before drawing that conclusion;
-do not remove or exempt a governance policy to bypass this prerequisite.
+An inherited policy that appends `FirstPartyUsage` IP tags can introduce this
+feature prerequisite. Inspect successful
+`Microsoft.Authorization/policies/append/action` events and their `fields` and
+`policies` metadata. An empty RG-scoped policy-assignment listing does not rule
+out a management-group assignment. Do not remove or exempt a governance policy
+to bypass this prerequisite.
 
 When the exact error is present, obtain authorization for the
 **subscription-level** feature change before following Microsoft's
@@ -323,14 +319,15 @@ if ($LASTEXITCODE -ne 0) { throw 'Network provider refresh failed' }
 Some registrations require approval; a
 [Microsoft Q&A answer for this exact feature](https://learn.microsoft.com/en-us/answers/a/1536598)
 describes that requirement for internal subscriptions. Do not treat `Pending`
-as success, promise immediate approval, or create a custom IP prefix to work
-around the gate. This enablement can unblock the already-approved billable AKS
-resources. It is not automatically applied by the RG-scoped templates or helpers.
+as success or create a custom IP prefix to work around the gate. This registration
+addresses only the named feature prerequisite. The RG-scoped templates and
+helpers do not apply it.
 
-After registration, observe the **existing** operation: require successful
-public-IP writes, actual node resources, cluster readiness, and the live
-request/trace evidence. Do not equate registration with a completed deployment
-or submit a competing cluster update while reconciliation remains active.
+Verify the **existing** operation after registration. Require successful
+public-IP writes, actual node resources, cluster readiness, and the
+request/trace evidence. Registration alone does not establish deployment
+completion. Do not submit a competing cluster update while reconciliation
+remains active.
 
 ## Apply the private runtime
 
@@ -351,7 +348,7 @@ kubectl --context $context get nodes
 ```
 
 Build/push the image from a clean, committed source tree with the existing locked
-Dockerfile workflow, or reuse the already verified image for that source commit.
+Dockerfile workflow, or reuse a verified image for that source commit.
 The kubelet has AcrPull; the operator building/pushing needs separate ACR build
 or push permissions. The infra scripts do not grant those or build/push images.
 
@@ -391,7 +388,7 @@ No `--force-conflicts` is used. If adopting manifests owned by another field
 manager, deliberately reconcile ownership/conflicts rather than overriding
 blindly. Partial applies are resumable. A rollout timeout requires inspection,
 not automatically deleting the namespace. Reapply uses the supplied token;
-token rotation is explicit and will require updating the client as well.
+token rotation is explicit and requires a client update.
 
 In a separate terminal with the same dedicated kubeconfig:
 
@@ -430,7 +427,7 @@ hosting, an authenticated endpoint declaration, or proof of invocation. Verify
 the project's `telemetry.get_application_insights_connection_string()` resolves
 the same component **without printing the value**, make a real authenticated
 model request, and query the connected Application Insights for the stable
-agent ID and expected release. Those live evidence steps are operator-owned.
+agent ID and expected release. The operator owns these verification steps.
 
 ## Rerun and cleanup
 

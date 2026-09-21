@@ -1,15 +1,11 @@
-# Deploy and demonstrate
+# Deploy and verify
 
 Deploy the private workload, send an authenticated model request, and locate
 that same request in Foundry. Agent execution stays on AKS; the operator performs
 only client requests, registration, deployment, and telemetry queries.
 
-<span id="deployment-record"></span>
-<span id="live-request-evidence"></span>
-<span id="aks-provisioning-diagnosis"></span>
-The dated deployment record, live response, and provisioning diagnosis have moved
-to [deployment evidence](evidence.md). The instructions below reproduce the
-request and attribution against an approved deployment.
+The [verification guide](evidence.md) defines the evidence required for one
+request and deployment.
 
 ## Approval boundary
 
@@ -174,7 +170,7 @@ kubectl --kubeconfig $Kubeconfig --context $Context -n $Namespace apply -f $Rend
 kubectl --kubeconfig $Kubeconfig --context $Context -n $Namespace rollout status deployment/boring-agent --timeout=300s
 ```
 
-For subsequent releases, update the image and matching ConfigMap together.
+For each release, update the image and matching ConfigMap together.
 Secret/ConfigMap environment changes alone do not restart pods: explicitly
 `rollout restart deployment/boring-agent` with the same context flags when needed.
 For rollback, restore the prior digest **and** its matching settings; `rollout
@@ -279,7 +275,7 @@ If KQL has spans but Foundry does not, check project linkage, viewer permissions
 registration identity, time range, and preview support. If neither has spans,
 check exporter errors and allowed outbound connectivity. Do not substitute a
 successful registration, healthy pod, unrelated trace, or generic Azure Monitor
-visibility for this evidence. Evaluation and Path B remain deferred.
+visibility for this evidence. Evaluation and Path B are outside this repository.
 
 ## Cleanup
 
