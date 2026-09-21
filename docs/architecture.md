@@ -32,7 +32,8 @@ The response returns the answer plus `trace_id`, `agent_id`, `release_id`,
 The [telemetry provider](https://github.com/ericchansen/foundry-aks-agent/blob/main/src/foundry_aks_agent/telemetry.py)
 exports native spans asynchronously to **the Foundry project's connected
 Application Insights resource**. The request-scoped identity processor sets
-`gen_ai.agent.id` on those spans; it does not create a second agent span.
+`gen_ai.agent.id`, `gen_ai.agent.name`, and the registered
+`gen_ai.agent.version` on those spans; it does not create a second agent span.
 
 <div class="diagram" role="region" aria-label="Trace parent chain; horizontally scrollable" tabindex="0" markdown="1">
 

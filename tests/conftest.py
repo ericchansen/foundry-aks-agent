@@ -26,7 +26,7 @@ def settings():
 def telemetry():
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
-    provider.add_span_processor(AgentIdentityProcessor())
+    provider.add_span_processor(AgentIdentityProcessor("boring-aks-agent", "1"))
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     yield provider, exporter
     provider.shutdown()

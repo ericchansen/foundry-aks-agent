@@ -26,10 +26,16 @@ def agent_scope(agent_id: str) -> Iterator[None]:
 class AgentIdentityProcessor(SpanProcessor):
     """Enrich each span created inside this agent's async request scope."""
 
+    def __init__(self, agent_name: str, agent_version: str) -> None:
+        self.agent_name = agent_name
+        self.agent_version = agent_version
+
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         agent_id = _agent_id.get()
         if agent_id is not None:
             span.set_attribute("gen_ai.agent.id", agent_id)
+            span.set_attribute("gen_ai.agent.name", self.agent_name)
+            span.set_attribute("gen_ai.agent.version", self.agent_version)
 
 
 def create_provider(settings: Settings) -> TracerProvider:
@@ -45,7 +51,7 @@ def create_provider(settings: Settings) -> TracerProvider:
             }
         ),
     )
-    provider.add_span_processor(AgentIdentityProcessor())
+    provider.add_span_processor(AgentIdentityProcessor(settings.agent_name, settings.agent_version))
     provider.add_span_processor(
         BatchSpanProcessor(
             AzureMonitorTraceExporter(

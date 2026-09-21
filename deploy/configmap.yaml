@@ -9,5 +9,6 @@ data:
   AZURE_OPENAI_API_VERSION: "2024-10-21"
   OTEL_AGENT_ID: "boring-aks-agent-demo"
   AGENT_NAME: "boring-aks-agent"
+  AGENT_VERSION: "1"
   # Use the full commit SHA of the clean source built into the image.
   RELEASE_ID: "REPLACE_WITH_FULL_COMMIT_SHA"

@@ -16,6 +16,7 @@ is the authoritative validation contract.
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Required connection string for the project's linked resource |
 | `AGENT_NAME` | Defaults to `boring-aks-agent` |
 | `OTEL_AGENT_ID` | Defaults to `boring-aks-agent-demo`; identical in runtime and registration |
+| `AGENT_VERSION` | Defaults to `1`; matches the registered external-agent version |
 | `RELEASE_ID` | Required image/release identifier |
 | `POD_NAME`, `POD_NAMESPACE` | Required workload attribution, populated by Kubernetes |
 | `FOUNDRY_PROJECT_ENDPOINT` | Required by administrative registration and evaluation tooling |

@@ -63,6 +63,7 @@ resource attributes identify the serving pod and namespace.
 - The Deployment and responding pod use the same non-placeholder image digest.
 - Registration readback returns the same agent ID as the response and trace
   spans.
+- Request, agent, and model spans carry the registered agent version.
 - Application Insights contains exactly one native agent span and one native
   model span for the request.
 - Parent IDs connect the request, agent, and model spans in order.
