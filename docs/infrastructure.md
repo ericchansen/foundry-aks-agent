@@ -4,8 +4,10 @@ This is **deployment code, not evidence of a successful live deployment**. It
 supports the repository's existing bearer-authenticated agent, private
 `ClusterIP` service, loopback port-forward, Workload Identity model calls, and
 Path A **metadata-only** external-agent registration. No APIM, ingress
-controller, public application service, additional agent tools, or evaluation
-stack is created.
+controller, public application service, additional agent tools, or scheduled
+evaluation service is created. The foundation grants the Foundry project
+identity Foundry User on the account for model inference and the scoped
+Application Insights roles used by one-off trace evaluation.
 
 ## Ownership and stages
 
@@ -15,7 +17,7 @@ Names are explicit; there is no tenant-wide discovery or Microsoft Graph lookup.
 
 | Stage | Resources |
 | --- | --- |
-| `foundation.bicep` | AIServices S0 account and project, pinned model deployment, Basic ACR (admin disabled), three distinct user-assigned identities, 30-day PerGB2018 workspace, workspace-backed Application Insights, project's AppInsights connection, scoped RBAC prerequisites |
+| `foundation.bicep` | AIServices S0 account and project, pinned runtime and GPT-5 judge deployments, Basic ACR (admin disabled), three distinct user-assigned identities, 30-day PerGB2018 workspace, workspace-backed Application Insights, project's AppInsights connection, scoped RBAC prerequisites |
 | `cluster.bicep` | AKS Free tier, two 4-vCPU system nodes by default, precreated control-plane and kubelet identities, Entra managed authentication/Azure RBAC, disabled local accounts, OIDC/Workload Identity, Azure CNI overlay, pod federation, operator bootstrap RBAC |
 
 **AKS creates and owns a second, separately named node resource group. Do not
@@ -27,6 +29,10 @@ We let AKS establish that permission. We do **not** grant Contributor/Network
 Contributor on the demo RG or subscription, nor give the kubelet network rights.
 This design has no bring-your-own VNet or other network resources outside the
 AKS-managed group.
+
+The runtime model keeps one capacity unit for the low-volume request path. The
+dedicated `gpt-5-mini` judge uses ten capacity units because Foundry evaluation
+and Insights analyze multiple traces concurrently.
 
 The [precreated kubelet prerequisite](https://learn.microsoft.com/azure/aks/managed-identity-overview#pre-created-kubelet-managed-identity)
 is implemented **before** AKS creation: the control-plane UAI receives Managed
@@ -195,7 +201,13 @@ Leave the override empty/absent only when no identical assignment exists.
 | `acrPullAssignmentName` | Kubelet UAI | ACR | `7f951dda-4ed3-4680-a7ca-43fe172d538d` |
 | `identityOperatorAssignmentName` | Control-plane UAI | Kubelet UAI | `f1a07417-d97a-45cb-824c-7a7467783830` |
 | `foundryUserAssignmentName` | Operator | Foundry project | `53ca6127-db72-4b80-b1b0-d745d6d5456d` |
+| `operatorMonitoringReaderAssignmentName` | Operator | Application Insights component | `43d0d8ad-25c7-4714-9337-8ba259a9fe05` |
+| `operatorPrivilegedMonitoringDataReaderAssignmentName` | Operator | Application Insights component | `dbc9c667-e97f-4491-aee6-90b9cf960190` |
+| `projectFoundryUserAssignmentName` | Project system-assigned identity | Foundry account | `53ca6127-db72-4b80-b1b0-d745d6d5456d` |
 | `projectInsightsReaderAssignmentName` | Project system-assigned identity | Application Insights component | `acdd72a7-3385-48ef-bd42-f606fba81ae7` |
+| `projectMonitoringReaderAssignmentName` | Project system-assigned identity | Application Insights component | `43d0d8ad-25c7-4714-9337-8ba259a9fe05` |
+| `projectLogAnalyticsReaderAssignmentName` | Project system-assigned identity | Application Insights component | `73c42c96-874c-492b-b04d-ab87d138a893` |
+| `projectPrivilegedMonitoringDataReaderAssignmentName` | Project system-assigned identity | Application Insights component | `dbc9c667-e97f-4491-aee6-90b9cf960190` |
 | `clusterAdminAssignmentName` (cluster file) | Operator | AKS | `b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b` |
 
 New assignments use stable, deterministic GUIDs. If an identity is deleted and

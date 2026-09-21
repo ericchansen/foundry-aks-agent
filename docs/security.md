@@ -6,8 +6,8 @@ design. A shared caller token is not user identity or human delegation.
 The Microsoft Foundry
 [external-agent feature is in public preview](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/register-external-agent).
 Microsoft provides the preview without a service-level agreement and does not
-recommend it for production workloads. This repository uses only registration
-and trace visibility from that feature.
+recommend it for production workloads. This repository uses registration, trace visibility, and one-off trace
+evaluation from that feature.
 
 ## Network and identity
 
@@ -44,15 +44,20 @@ See the [operator workflow](infrastructure.md#apply-the-private-runtime).
 ## Telemetry content
 
 [Pydantic instrumentation](https://github.com/ericchansen/foundry-aks-agent/blob/main/src/foundry_aks_agent/runtime.py)
-disables prompt/response and binary-content capture. Still use only synthetic,
-non-sensitive prompts: provider exceptions may include service error details
-in framework spans.
+records prompt and response content so Foundry can display and evaluate the
+synthetic interactions. Binary content remains disabled. Use only synthetic,
+non-sensitive prompts: message content is retained in telemetry, and provider
+exceptions may include service error details in framework spans.
 
 [Tracing](https://github.com/ericchansen/foundry-aks-agent/blob/main/src/foundry_aks_agent/telemetry.py)
 is fully sampled for this low-volume demo. Scoped enrichment sets `gen_ai.agent.id`
 on spans created during an agent request without tagging unrelated work.
 The native Pydantic run/model spans are retained; no duplicate `invoke_agent`
-span is added. Azure Monitor export is asynchronous.
+span is added. Azure Monitor export is asynchronous. The Foundry project
+identity receives Foundry User on the Foundry account for judge-model inference
+and only the Application Insights Reader, Monitoring Reader, Log Analytics
+Reader, and protected-content reader roles required for tracing, evaluation,
+and Insights.
 
 ## Approval and cleanup
 

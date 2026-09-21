@@ -24,17 +24,20 @@ def endpoint(value: str) -> str:
     return value.rstrip("/")
 
 
+def ask(url: str, prompt: str, token: str) -> Answer:
+    with httpx.Client(timeout=60, follow_redirects=False, trust_env=False) as client:
+        response = client.post(
+            f"{url}/ask",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"prompt": prompt},
+        )
+        response.raise_for_status()
+        return Answer.model_validate(response.json())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Call the authenticated AKS agent, not Foundry.")
     parser.add_argument("--url", type=endpoint, default="http://127.0.0.1:8000")
     parser.add_argument("--prompt", default="Reply with a short greeting.")
     args = parser.parse_args()
-    token = os.environ["AGENT_API_TOKEN"]
-    with httpx.Client(timeout=60, follow_redirects=False, trust_env=False) as client:
-        response = client.post(
-            f"{args.url}/ask",
-            headers={"Authorization": f"Bearer {token}"},
-            json={"prompt": args.prompt},
-        )
-        response.raise_for_status()
-        print(Answer.model_validate(response.json()).model_dump_json(indent=2))
+    print(ask(args.url, args.prompt, os.environ["AGENT_API_TOKEN"]).model_dump_json(indent=2))

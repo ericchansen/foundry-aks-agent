@@ -18,7 +18,8 @@ request. Foundry adds an external-agent record and attributed traces.
 
     Microsoft provides this preview without a service-level agreement and does
     not recommend it for production workloads. This repository implements
-    registration and tracing; evaluation is outside its scope.
+    registration, tracing, synthetic traffic generation, and one-off trace
+    evaluation plus on-demand Insights.
 
 <div class="diagram" role="region" aria-label="Request and telemetry architecture; scroll to see the full diagram on small screens" tabindex="0" markdown="1">
 
@@ -62,6 +63,6 @@ Application Insights resource and the external agent's Foundry trace view.
 
 This is a single-operator, synthetic-data reference deployment. It has no agent
 tools, conversation store, retries, or public application ingress. Path B
-(APIM/AI Gateway), evaluation, document search, ingestion, and an agent web UI
-are outside this repository.
+(APIM/AI Gateway), scheduled Insights or evaluation, multi-turn evaluation,
+document search, ingestion, and an agent web UI are outside this repository.
 See the [runtime boundaries](security.md).

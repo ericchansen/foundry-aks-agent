@@ -17,6 +17,12 @@ param modelVersion string = '2025-04-14'
 param modelSku string = 'GlobalStandard'
 @minValue(1)
 param modelCapacity int = 1
+param evaluationModelDeploymentName string = 'gpt-5-mini'
+param evaluationModelName string = 'gpt-5-mini'
+param evaluationModelVersion string = '2025-08-07'
+param evaluationModelSku string = 'GlobalStandard'
+@minValue(1)
+param evaluationModelCapacity int = 10
 @description('Entra object ID, not an application/client ID. No Microsoft Graph lookup is performed.')
 param operatorObjectId string
 @allowed(['User', 'ServicePrincipal', 'Group'])
@@ -36,7 +42,13 @@ param modelUserAssignmentName string = ''
 param acrPullAssignmentName string = ''
 param identityOperatorAssignmentName string = ''
 param foundryUserAssignmentName string = ''
+param operatorMonitoringReaderAssignmentName string = ''
+param operatorPrivilegedMonitoringDataReaderAssignmentName string = ''
+param projectFoundryUserAssignmentName string = ''
 param projectInsightsReaderAssignmentName string = ''
+param projectMonitoringReaderAssignmentName string = ''
+param projectLogAnalyticsReaderAssignmentName string = ''
+param projectPrivilegedMonitoringDataReaderAssignmentName string = ''
 
 resource workloadIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
   name: workloadIdentityName
@@ -143,6 +155,26 @@ resource model 'Microsoft.CognitiveServices/accounts/deployments@2026-05-01' = {
   }
 }
 
+resource evaluationModel 'Microsoft.CognitiveServices/accounts/deployments@2026-05-01' = {
+  parent: account
+  name: evaluationModelDeploymentName
+  dependsOn: [
+    model
+  ]
+  sku: {
+    name: evaluationModelSku
+    capacity: evaluationModelCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: evaluationModelName
+      version: evaluationModelVersion
+    }
+    versionUpgradeOption: 'NoAutoUpgrade'
+  }
+}
+
 // Intentionally not output: the runtime obtains this value in memory.
 resource connection 'Microsoft.CognitiveServices/accounts/projects/connections@2026-05-01' = {
   parent: project
@@ -201,11 +233,71 @@ resource foundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (
   }
 }
 
+resource operatorMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(operatorMonitoringReaderAssignmentName) ? guid(insights.id, operatorObjectId, 'Monitoring Reader') : operatorMonitoringReaderAssignmentName
+  scope: insights
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '43d0d8ad-25c7-4714-9337-8ba259a9fe05')
+    principalId: operatorObjectId
+    principalType: operatorPrincipalType
+  }
+}
+
+resource operatorPrivilegedMonitoringDataReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(operatorPrivilegedMonitoringDataReaderAssignmentName) ? guid(insights.id, operatorObjectId, 'Privileged Monitoring Data Reader') : operatorPrivilegedMonitoringDataReaderAssignmentName
+  scope: insights
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'dbc9c667-e97f-4491-aee6-90b9cf960190')
+    principalId: operatorObjectId
+    principalType: operatorPrincipalType
+  }
+}
+
+resource projectFoundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(projectFoundryUserAssignmentName) ? guid(account.id, project.id, 'Foundry User') : projectFoundryUserAssignmentName
+  scope: account
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource projectInsightsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: empty(projectInsightsReaderAssignmentName) ? guid(insights.id, project.id, 'Reader') : projectInsightsReaderAssignmentName
   scope: insights
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource projectMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(projectMonitoringReaderAssignmentName) ? guid(insights.id, project.id, 'Monitoring Reader') : projectMonitoringReaderAssignmentName
+  scope: insights
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '43d0d8ad-25c7-4714-9337-8ba259a9fe05')
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource projectLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(projectLogAnalyticsReaderAssignmentName) ? guid(insights.id, project.id, 'Log Analytics Reader') : projectLogAnalyticsReaderAssignmentName
+  scope: insights
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '73c42c96-874c-492b-b04d-ab87d138a893')
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource projectPrivilegedMonitoringDataReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: empty(projectPrivilegedMonitoringDataReaderAssignmentName) ? guid(insights.id, project.id, 'Privileged Monitoring Data Reader') : projectPrivilegedMonitoringDataReaderAssignmentName
+  scope: insights
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'dbc9c667-e97f-4491-aee6-90b9cf960190')
     principalId: project.identity.principalId
     principalType: 'ServicePrincipal'
   }

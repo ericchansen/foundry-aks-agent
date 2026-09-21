@@ -33,6 +33,8 @@ dev = [
 
 [project.scripts]
 aks-agent = "foundry_aks_agent.client:main"
+aks-agent-traffic = "foundry_aks_agent.traffic:main"
+aks-agent-evaluate = "foundry_aks_agent.evaluate:main"
 aks-agent-register = "foundry_aks_agent.register:main"
 
 [tool.pytest.ini_options]
